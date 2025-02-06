@@ -1,10 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+
+import { AuthModule } from './modules/auth/auth.module';
+import { AppMongooseModule } from './mongoose.module';
+import { AppThrottlerGuard, AppThrottlerModule } from './throttler.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot(),
+    AppMongooseModule,
+    AppThrottlerModule,
+    AuthModule,
+  ],
+  providers: [AppThrottlerGuard],
 })
 export class AppModule {}
