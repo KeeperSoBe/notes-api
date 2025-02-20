@@ -9,6 +9,8 @@ import HashService from '../../shared/hash.service';
 import { UserAuthenticationDto } from '../auth/dtos/authentication.dto';
 import { User } from './user.schema';
 import { UsersService } from './users.service';
+import { Folder } from '../folders/folder.schema';
+import { FoldersService } from '../folders/folders.service';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -52,7 +54,11 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         HashService,
-
+        FoldersService,
+        {
+          provide: getModelToken(Folder.name),
+          useValue: {},
+        },
         {
           provide: getModelToken(User.name),
           useValue: {
@@ -78,11 +84,18 @@ describe('UsersService', () => {
     };
 
     it('should create and return a new user', async () => {
+      const createDefaultFolder = jest
+        .spyOn(service['foldersService'], 'createDefaultFolder')
+        // eslint-disable-next-line @typescript-eslint/require-await
+        .mockImplementation(async () => ({}) as never);
+
       expect(await service.create(registerDto)).toEqual(mockUser);
       expect(spies.create).toHaveBeenCalledWith({
         ...registerDto,
         password: mockHashedPassword,
       });
+
+      expect(createDefaultFolder).toHaveBeenCalledWith(mockUser.id);
     });
 
     it('should throw a bad request exception if the users email is already registered', async () => {

@@ -85,19 +85,10 @@ describe('AuthService', () => {
         // eslint-disable-next-line @typescript-eslint/require-await
         .mockImplementation(async () => mockUser);
 
-      const createFolder = jest
-        .spyOn(service['foldersService'], 'create')
-        // eslint-disable-next-line @typescript-eslint/require-await
-        .mockImplementation(async () => ({}) as never);
-
       expect(await service.register(registerDto)).toEqual(
         mockAuthenticationResponse,
       );
       expect(create).toHaveBeenCalledWith(registerDto);
-      expect(createFolder).toHaveBeenCalledWith(mockUser.id, {
-        title: 'Notes',
-        order: 0,
-      });
       expect(spies.toAccessToken).toHaveBeenCalledWith({
         createdAt: mockUser.createdAt,
         email: mockUser.email,

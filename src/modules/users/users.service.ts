@@ -10,6 +10,7 @@ import { Model } from 'mongoose';
 import HashService from '../../shared/hash.service';
 import { UserAuthenticationDto } from '../auth/dtos/authentication.dto';
 import { User, UserDto } from './user.schema';
+import { FoldersService } from '../folders/folders.service';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +25,7 @@ export class UsersService {
   public constructor(
     @InjectModel(User.name)
     private readonly users: Model<User>,
+    private readonly foldersService: FoldersService,
     private readonly hashService: HashService,
   ) {}
 
@@ -54,6 +56,8 @@ export class UsersService {
       });
 
       const { id, createdAt } = user.toJSON();
+
+      await this.foldersService.createDefaultFolder(id);
 
       return { ...createUserDto, id, createdAt };
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
