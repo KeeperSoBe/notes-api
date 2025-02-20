@@ -31,6 +31,7 @@ import { FoldersService } from './folders.service';
 import { FolderDto } from './folder.schema';
 import { CreateFolderDto } from './dtos/create-folder.dto';
 import { UpdateFolderDto } from './dtos/update-folder.dto';
+import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
 
 @ApiTags('Folders')
 @Controller('folders')
@@ -103,11 +104,13 @@ export class FoldersController {
     summary: 'Delete a folder',
     description: 'Deletes a folder by its id.',
   })
+  @ApiResponse({ type: DeletedAtDto })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async delete(
     @Request() { user }: AuthenticatedRequest,
     @Param() { id }: FindOneByIdParam,
-  ): Promise<void> {
+  ): Promise<DeletedAtDto> {
     await this.service.delete(user.id, id);
+    return { deletedAt: new Date() };
   }
 }

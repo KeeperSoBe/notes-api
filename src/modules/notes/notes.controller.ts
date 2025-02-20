@@ -16,6 +16,7 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -30,6 +31,7 @@ import {
 } from '../../shared/interfaces/request.interface';
 import { UpdateNoteDto } from './dtos/update-note.dto';
 import { CreateNoteDto } from './dtos/create-note.dto';
+import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
 
 @ApiTags('Notes')
 @Controller('folders/:folderId/notes')
@@ -103,14 +105,14 @@ export class NotesController {
     description: 'Patch updates a note by its id.',
   })
   @ApiBody({ type: NoteDto })
-  @ApiCreatedResponse({ type: NoteDto })
+  @ApiCreatedResponse({ type: UpdateNoteDto })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async update(
     @Request() { user }: AuthenticatedRequest,
     @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
     @Body() updateNoteDto: UpdateNoteDto,
-  ): Promise<void> {
-    await this.service.update(user.id, folderId, id, updateNoteDto);
+  ): Promise<UpdateNoteDto> {
+    return await this.service.update(user.id, folderId, id, updateNoteDto);
   }
 
   @Delete(':id')
@@ -124,11 +126,13 @@ export class NotesController {
     summary: 'Delete a note',
     description: 'Deletes a note by its id.',
   })
+  @ApiResponse({ type: DeletedAtDto })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async delete(
     @Request() { user }: AuthenticatedRequest,
     @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
-  ): Promise<void> {
+  ): Promise<DeletedAtDto> {
     await this.service.delete(user.id, folderId, id);
+    return { deletedAt: new Date() };
   }
 }

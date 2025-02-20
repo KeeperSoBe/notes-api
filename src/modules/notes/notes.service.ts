@@ -14,6 +14,7 @@ export class NotesService {
   private readonly selectionProperties: {
     [Property in keyof Partial<Note>]: 0 | 1;
   } = {
+    folderId: 1,
     id: 1,
     title: 1,
     contents: 1,
@@ -42,13 +43,7 @@ export class NotesService {
       throw new NotFoundException();
     }
 
-    return {
-      id: note.id,
-      title: note.title,
-      contents: note.contents,
-      createdAt: note.createdAt,
-      updatedAt: note.updatedAt,
-    };
+    return this.toNoteDto(note);
   }
 
   public async list(userId: string, folderId: string): Promise<NoteDto[]> {
@@ -63,15 +58,7 @@ export class NotesService {
     const parsedNotes: NoteDto[] = [];
 
     for (let index = 0; index < notes.length; index++) {
-      const { id, title, contents, createdAt, updatedAt } = notes[index];
-
-      parsedNotes.push({
-        id,
-        title,
-        contents,
-        createdAt,
-        updatedAt,
-      });
+      parsedNotes.push(this.toNoteDto(notes[index]));
     }
 
     return parsedNotes;
@@ -89,9 +76,7 @@ export class NotesService {
         folderId,
       });
 
-      const { id, title, contents, createdAt, updatedAt } = notes.toJSON();
-
-      return { id, title, contents, createdAt, updatedAt };
+      return this.toNoteDto(notes.toJSON());
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       throw new BadRequestException();
@@ -103,9 +88,10 @@ export class NotesService {
     folderId: string,
     id: string,
     updateNoteDto: UpdateNoteDto,
-  ): Promise<void> {
+  ): Promise<UpdateNoteDto> {
     try {
       await this.notes.updateOne({ userId, folderId, id }, updateNoteDto);
+      return updateNoteDto;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       throw new BadRequestException();
@@ -123,5 +109,16 @@ export class NotesService {
     } catch (_error) {
       throw new BadRequestException();
     }
+  }
+
+  private toNoteDto({
+    folderId,
+    id,
+    title,
+    contents,
+    createdAt,
+    updatedAt,
+  }: Note): NoteDto {
+    return { folderId, id, title, contents, createdAt, updatedAt };
   }
 }
