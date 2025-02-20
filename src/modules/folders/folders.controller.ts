@@ -16,6 +16,7 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -28,7 +29,8 @@ import {
 } from '../../shared/interfaces/request.interface';
 import { FoldersService } from './folders.service';
 import { FolderDto } from './folder.schema';
-import { UpsertFolderDto } from './dtos/upsert-folder.dto';
+import { CreateFolderDto } from './dtos/create-folder.dto';
+import { UpdateFolderDto } from './dtos/update-folder.dto';
 
 @ApiTags('Folders')
 @Controller('folders')
@@ -63,14 +65,14 @@ export class FoldersController {
     summary: 'Creates a folder',
     description: 'Creates a new folder.',
   })
-  @ApiBody({ type: FolderDto })
+  @ApiBody({ type: CreateFolderDto })
   @ApiCreatedResponse({ type: FolderDto })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async create(
     @Request() { user }: AuthenticatedRequest,
-    @Body() upsertFolderDto: UpsertFolderDto,
+    @Body() createFolderDto: CreateFolderDto,
   ): Promise<FolderDto> {
-    return await this.service.create(user.id, upsertFolderDto);
+    return await this.service.create(user.id, createFolderDto);
   }
 
   @Patch(':id')
@@ -79,15 +81,15 @@ export class FoldersController {
     summary: 'Updates a folder',
     description: 'Patch updates a folder by its id.',
   })
-  @ApiBody({ type: FolderDto })
-  @ApiCreatedResponse({ type: FolderDto })
+  @ApiBody({ type: UpdateFolderDto })
+  @ApiResponse({ type: UpdateFolderDto })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async update(
     @Request() { user }: AuthenticatedRequest,
     @Param() { id }: FindOneByIdParam,
-    @Body() upsertFolderDto: UpsertFolderDto,
-  ): Promise<void> {
-    await this.service.update(user.id, id, upsertFolderDto);
+    @Body() updateFolderDto: UpdateFolderDto,
+  ): Promise<UpdateFolderDto> {
+    return await this.service.update(user.id, id, updateFolderDto);
   }
 
   @Delete(':id')

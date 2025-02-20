@@ -2,7 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Folder, FolderDto } from './folder.schema';
-import { UpsertFolderDto } from './dtos/upsert-folder.dto';
+import { CreateFolderDto } from './dtos/create-folder.dto';
+import { UpdateFolderDto } from './dtos/update-folder.dto';
 
 @Injectable()
 export class FoldersService {
@@ -11,6 +12,7 @@ export class FoldersService {
   } = {
     id: 1,
     title: 1,
+    order: 1,
     createdAt: 1,
   };
 
@@ -21,19 +23,17 @@ export class FoldersService {
 
   public async list(userId: string): Promise<FolderDto[]> {
     const folders = await this.folders
-      .find({ userId }, {}, { select: { ...this.selectionProperties, _id: 0 } })
+      .find(
+        { userId, deletedAt: null },
+        {},
+        { select: { ...this.selectionProperties, _id: 0 } },
+      )
       .lean();
 
     const parsedFolders: FolderDto[] = [];
 
     for (let index = 0; index < folders.length; index++) {
-      const { id, title, createdAt } = folders[index];
-
-      parsedFolders.push({
-        id,
-        title,
-        createdAt,
-      });
+      parsedFolders.push(this.toFolderDto(folders[index]));
     }
 
     return parsedFolders;
@@ -41,14 +41,12 @@ export class FoldersService {
 
   public async create(
     userId: string,
-    upsertFolderDto: UpsertFolderDto,
+    createFolderDto: CreateFolderDto,
   ): Promise<FolderDto> {
     try {
-      const folders = await this.folders.create({ ...upsertFolderDto, userId });
+      const folders = await this.folders.create({ ...createFolderDto, userId });
 
-      const { id, title, createdAt } = folders.toJSON();
-
-      return { id, title, createdAt };
+      return this.toFolderDto(folders.toJSON());
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       throw new BadRequestException();
@@ -58,10 +56,16 @@ export class FoldersService {
   public async update(
     userId: string,
     id: string,
-    upsertFolderDto: UpsertFolderDto,
-  ): Promise<void> {
+    updateFolderDto: UpdateFolderDto,
+  ): Promise<UpdateFolderDto> {
     try {
-      await this.folders.updateOne({ userId, id }, upsertFolderDto);
+      if (updateFolderDto.order === 0) {
+        // 0 Is the default folder
+        throw new BadRequestException();
+      }
+
+      await this.folders.updateOne({ userId, id }, updateFolderDto);
+      return updateFolderDto;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       throw new BadRequestException();
@@ -70,10 +74,15 @@ export class FoldersService {
 
   public async delete(userId: string, id: string): Promise<void> {
     try {
+      // TODO: This will change to soft deletion soon.
       await this.folders.deleteOne({ userId, id });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       throw new BadRequestException();
     }
+  }
+
+  private toFolderDto({ id, title, order, createdAt }: Folder): FolderDto {
+    return { id, title, order, createdAt };
   }
 }

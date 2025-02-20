@@ -10,5 +10,6 @@ import { FoldersService } from './folders.service';
   ],
   controllers: [FoldersController],
   providers: [FoldersService],
+  exports: [FoldersService],
 })
 export class FoldersModule {}

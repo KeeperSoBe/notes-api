@@ -6,11 +6,13 @@ import { UsersService } from '../users/users.service';
 import { AuthenticationResponse } from './auth.interface';
 import { UserAuthenticationDto } from './dtos/authentication.dto';
 import HashService from '../../shared/hash.service';
+import { FoldersService } from '../folders/folders.service';
 
 @Injectable()
 export class AuthService {
   public constructor(
     private readonly usersService: UsersService,
+    private readonly foldersService: FoldersService,
     private readonly jwtService: JwtService,
     private readonly hash: HashService,
   ) {}
@@ -19,12 +21,17 @@ export class AuthService {
     password,
     ...rest
   }: UserAuthenticationDto): Promise<AuthenticationResponse> {
-    return await this.toAccessToken(
-      await this.usersService.create({
-        ...rest,
-        password,
-      }),
-    );
+    const user = await this.usersService.create({
+      ...rest,
+      password,
+    });
+
+    await this.foldersService.create(user.id, {
+      title: 'Notes',
+      order: 0,
+    });
+
+    return await this.toAccessToken(user);
   }
 
   public async login(

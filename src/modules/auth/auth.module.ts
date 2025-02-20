@@ -6,9 +6,10 @@ import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import HashService from '../../shared/hash.service';
+import { FoldersModule } from '../folders/folders.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), UsersModule, AppJwtModule],
+  imports: [ConfigModule.forRoot(), UsersModule, FoldersModule, AppJwtModule],
   controllers: [AuthController],
   providers: [AuthService, AppAuthGuard, HashService],
   exports: [AuthService],

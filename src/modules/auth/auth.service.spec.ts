@@ -13,6 +13,8 @@ import { User } from '../users/user.schema';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { UserAuthenticationDto } from './dtos/authentication.dto';
+import { FoldersService } from '../folders/folders.service';
+import { Folder } from '../folders/folder.schema';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -33,10 +35,15 @@ describe('AuthService', () => {
         ConfigService,
         AuthService,
         UsersService,
+        FoldersService,
         JwtService,
         HashService,
         {
           provide: getModelToken(User.name),
+          useValue: {},
+        },
+        {
+          provide: getModelToken(Folder.name),
           useValue: {},
         },
       ],
@@ -61,13 +68,12 @@ describe('AuthService', () => {
         // eslint-disable-next-line @typescript-eslint/require-await
         .mockImplementation(async () => false),
     };
-    // console.warn('Service: ', service);
   });
 
   it('should be defined', () => expect(service).toBeDefined());
 
   describe('Method: register', () => {
-    it('should hash the users password, call the user services create method and return the access token', async () => {
+    it('should call the user services create method, create the default folder and return the access token', async () => {
       const { email } = mockUser;
       const registerDto: UserAuthenticationDto = {
         email,
@@ -79,10 +85,19 @@ describe('AuthService', () => {
         // eslint-disable-next-line @typescript-eslint/require-await
         .mockImplementation(async () => mockUser);
 
+      const createFolder = jest
+        .spyOn(service['foldersService'], 'create')
+        // eslint-disable-next-line @typescript-eslint/require-await
+        .mockImplementation(async () => ({}) as never);
+
       expect(await service.register(registerDto)).toEqual(
         mockAuthenticationResponse,
       );
       expect(create).toHaveBeenCalledWith(registerDto);
+      expect(createFolder).toHaveBeenCalledWith(mockUser.id, {
+        title: 'Notes',
+        order: 0,
+      });
       expect(spies.toAccessToken).toHaveBeenCalledWith({
         createdAt: mockUser.createdAt,
         email: mockUser.email,

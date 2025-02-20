@@ -3,7 +3,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { Base } from '../../shared/schemas/base.schema';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Length } from 'class-validator';
 
 export type FolderDocument = HydratedDocument<Folder>;
 
@@ -17,17 +16,29 @@ export class Folder extends Base {
   public userId: string;
 
   @Prop({
+    type: Number,
+    required: false,
+  })
+  public order: number;
+
+  @Prop({
     type: String,
     required: true,
   })
   public title: string;
+
+  @Prop({
+    type: Date || null,
+    default: null,
+  })
+  public deletedAt: Date | null;
 }
 
 export const FolderSchema = SchemaFactory.createForClass(Folder);
 
 export class FolderDto
   extends Base
-  implements Readonly<Omit<Folder, 'userId'>>
+  implements Readonly<Omit<Folder, 'userId' | 'deletedAt'>>
 {
   @ApiProperty({
     type: String,
@@ -35,7 +46,13 @@ export class FolderDto
     example: 'My folder title',
     description: 'The title of the folder.',
   })
-  @IsString()
-  @Length(0, 255)
   public title: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    example: 0,
+    description: 'The order of the folder.',
+  })
+  public order: number;
 }

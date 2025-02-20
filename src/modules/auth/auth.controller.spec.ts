@@ -15,6 +15,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UserAuthenticationDto } from './dtos/authentication.dto';
 import { AuthenticatedRequest } from '../../shared/interfaces/request.interface';
+import { FoldersService } from '../folders/folders.service';
+import { Folder } from '../folders/folder.schema';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -30,9 +32,14 @@ describe('AuthController', () => {
         AuthService,
         HashService,
         UsersService,
+        FoldersService,
         JwtService,
         {
           provide: getModelToken(User.name),
+          useValue: {},
+        },
+        {
+          provide: getModelToken(Folder.name),
           useValue: {},
         },
       ],
