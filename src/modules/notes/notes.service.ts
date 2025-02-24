@@ -5,9 +5,11 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Note, NoteDto } from './note.schema';
+
+import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
 import { CreateNoteDto } from './dtos/create-note.dto';
 import { UpdateNoteDto } from './dtos/update-note.dto';
+import { Note, NoteDto } from './note.schema';
 
 @Injectable()
 export class NotesService {
@@ -16,9 +18,9 @@ export class NotesService {
   } = {
     folderId: 1,
     id: 1,
-    title: 1,
     contents: 1,
     createdAt: 1,
+    updatedAt: 1,
   };
 
   public constructor(
@@ -49,7 +51,7 @@ export class NotesService {
   public async list(userId: string, folderId: string): Promise<NoteDto[]> {
     const notes = await this.notes
       .find(
-        { userId, folderId },
+        { userId, folderId, deletedAt: null },
         {},
         { select: { ...this.selectionProperties, _id: 0 } },
       )
@@ -62,6 +64,33 @@ export class NotesService {
     }
 
     return parsedNotes;
+  }
+
+  public async listSoftDeleted(
+    userId: string,
+  ): Promise<(NoteDto & DeletedAtDto)[]> {
+    const notes = await this.notes
+      .find(
+        { userId, deletedAt: { $ne: null } },
+        {},
+        { select: { ...this.selectionProperties, deletedAt: 1, _id: 0 } },
+      )
+      .lean();
+
+    const parsedFolders: (NoteDto & DeletedAtDto)[] = [];
+
+    for (let index = 0; index < notes.length; index++) {
+      const deletedAt = notes[index].deletedAt;
+
+      if (deletedAt) {
+        parsedFolders.push({
+          ...this.toNoteDto(notes[index]),
+          deletedAt,
+        });
+      }
+    }
+
+    return parsedFolders;
   }
 
   public async create(
@@ -98,6 +127,26 @@ export class NotesService {
     }
   }
 
+  public async softDelete(
+    userId: string,
+    folderId: string,
+    id: string,
+  ): Promise<DeletedAtDto> {
+    try {
+      const deletedAt = new Date();
+
+      await this.notes.updateOne(
+        { userId, folderId, id, deletedAt: null },
+        { deletedAt },
+      );
+
+      return { deletedAt };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
+      throw new BadRequestException();
+    }
+  }
+
   public async delete(
     userId: string,
     folderId: string,
@@ -114,11 +163,10 @@ export class NotesService {
   private toNoteDto({
     folderId,
     id,
-    title,
     contents,
     createdAt,
     updatedAt,
   }: Note): NoteDto {
-    return { folderId, id, title, contents, createdAt, updatedAt };
+    return { folderId, id, contents, createdAt, updatedAt };
   }
 }

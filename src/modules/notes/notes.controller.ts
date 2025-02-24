@@ -22,19 +22,21 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
-import { NotesService } from './notes.service';
-import { NoteDto } from './note.schema';
-import { IUnauthorizedException } from '../../shared/interfaces/swagger.interface';
+import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
 import {
   AuthenticatedRequest,
   FindOneByIdParam,
 } from '../../shared/interfaces/request.interface';
-import { UpdateNoteDto } from './dtos/update-note.dto';
+import { IUnauthorizedException } from '../../shared/interfaces/swagger.interface';
 import { CreateNoteDto } from './dtos/create-note.dto';
-import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
+import { UpdateNoteDto } from './dtos/update-note.dto';
+import { NoteDto } from './note.schema';
+import { NotesService } from './notes.service';
+
+const routePrefix = 'folders/:folderId/notes/';
 
 @ApiTags('Notes')
-@Controller('folders/:folderId/notes')
+@Controller()
 @ApiBearerAuth()
 @Throttle({
   default: {
@@ -45,7 +47,21 @@ import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
 export class NotesController {
   public constructor(private readonly service: NotesService) {}
 
-  @Get()
+  @Get('folders/deleted')
+  @ApiOperation({
+    operationId: 'listSoftDeleted',
+    summary: 'Lists a users deleted notes',
+    description: 'Lists a users deleted notes.',
+  })
+  @ApiResponse({ type: Array<NoteDto & DeletedAtDto> })
+  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  public async listSoftDeleted(
+    @Request() { user }: AuthenticatedRequest,
+  ): Promise<(NoteDto & DeletedAtDto)[]> {
+    return await this.service.listSoftDeleted(user.id);
+  }
+
+  @Get(routePrefix)
   @ApiOperation({
     operationId: 'list',
     summary: 'Lists a users notes',
@@ -60,7 +76,7 @@ export class NotesController {
     return await this.service.list(user.id, folderId);
   }
 
-  @Get(':id')
+  @Get(`${routePrefix}:id`)
   @ApiParam({
     type: String,
     name: 'id',
@@ -80,14 +96,14 @@ export class NotesController {
     return await this.service.get(user.id, folderId, id);
   }
 
-  @Post()
+  @Post(routePrefix)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     operationId: 'create',
     summary: 'Creates a note',
     description: 'Creates a new note.',
   })
-  @ApiBody({ type: NoteDto })
+  @ApiBody({ type: CreateNoteDto })
   @ApiCreatedResponse({ type: NoteDto })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async create(
@@ -98,7 +114,7 @@ export class NotesController {
     return await this.service.create(user.id, folderId, createNoteDto);
   }
 
-  @Patch(':id')
+  @Patch(`${routePrefix}:id`)
   @ApiOperation({
     operationId: 'update',
     summary: 'Updates a note',
@@ -115,7 +131,27 @@ export class NotesController {
     return await this.service.update(user.id, folderId, id, updateNoteDto);
   }
 
-  @Delete(':id')
+  @Delete(`${routePrefix}:id/soft`)
+  @ApiParam({
+    type: String,
+    name: 'id',
+    required: true,
+  })
+  @ApiOperation({
+    operationId: 'softDelete',
+    summary: 'Soft delete a note',
+    description: 'Soft deletes a note by its id.',
+  })
+  @ApiResponse({ type: DeletedAtDto })
+  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  public async softDelete(
+    @Request() { user }: AuthenticatedRequest,
+    @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
+  ): Promise<DeletedAtDto> {
+    return await this.service.softDelete(user.id, folderId, id);
+  }
+
+  @Delete(`${routePrefix}:id`)
   @ApiParam({
     type: String,
     name: 'id',
