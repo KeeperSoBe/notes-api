@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
@@ -20,7 +21,10 @@ import {
 import { Throttle } from '@nestjs/throttler';
 
 import { AuthenticatedRequest } from '../../shared/interfaces/request.interface';
-import { IUnauthorizedException } from '../../shared/interfaces/swagger.interface';
+import {
+  IBadRequestException,
+  IUnauthorizedException,
+} from '../../shared/interfaces/swagger.interface';
 import { UserDto } from '../users/user.schema';
 import { AuthenticationResponse } from './auth.interface';
 import { AuthService } from './auth.service';
@@ -49,6 +53,7 @@ export class AuthController {
   })
   @ApiBody({ type: UserAuthenticationDto })
   @ApiCreatedResponse({ type: AuthenticationResponse })
+  @ApiBadRequestResponse({ type: IBadRequestException })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async register(
     @Body() { email, password }: UserAuthenticationDto,
@@ -69,6 +74,7 @@ export class AuthController {
   })
   @ApiBody({ type: UserAuthenticationDto })
   @ApiOkResponse({ type: AuthenticationResponse })
+  @ApiBadRequestResponse({ type: IBadRequestException })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async login(
     @Body() { email, password }: UserAuthenticationDto,

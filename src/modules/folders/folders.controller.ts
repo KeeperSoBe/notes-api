@@ -14,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -22,16 +23,19 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
-import { IUnauthorizedException } from '../../shared/interfaces/swagger.interface';
+import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
 import {
   AuthenticatedRequest,
   FindOneByIdParam,
 } from '../../shared/interfaces/request.interface';
-import { FoldersService } from './folders.service';
-import { FolderDto } from './folder.schema';
+import {
+  INotFoundException,
+  IUnauthorizedException,
+} from '../../shared/interfaces/swagger.interface';
 import { CreateFolderDto } from './dtos/create-folder.dto';
 import { UpdateFolderDto } from './dtos/update-folder.dto';
-import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
+import { FolderDto } from './folder.schema';
+import { FoldersService } from './folders.service';
 
 @ApiTags('Folders')
 @Controller('folders')
@@ -84,6 +88,7 @@ export class FoldersController {
   })
   @ApiBody({ type: UpdateFolderDto })
   @ApiResponse({ type: UpdateFolderDto })
+  @ApiNotFoundResponse({ type: INotFoundException })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async update(
     @Request() { user }: AuthenticatedRequest,
@@ -105,6 +110,7 @@ export class FoldersController {
     description: 'Deletes a folder by its id.',
   })
   @ApiResponse({ type: DeletedAtDto })
+  @ApiNotFoundResponse({ type: INotFoundException })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async delete(
     @Request() { user }: AuthenticatedRequest,

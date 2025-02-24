@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
-import { HydratedDocument } from 'mongoose';
-import { Base } from '../../shared/schemas/base.schema';
 import { ApiProperty } from '@nestjs/swagger';
+import { HydratedDocument } from 'mongoose';
+
+import { Base } from '../../shared/schemas/base.schema';
 
 export type FolderDocument = HydratedDocument<Folder>;
 
@@ -26,19 +26,13 @@ export class Folder extends Base {
     required: true,
   })
   public title: string;
-
-  @Prop({
-    type: Date || null,
-    default: null,
-  })
-  public deletedAt: Date | null;
 }
 
 export const FolderSchema = SchemaFactory.createForClass(Folder);
 
 export class FolderDto
   extends Base
-  implements Readonly<Omit<Folder, 'userId' | 'deletedAt'>>
+  implements Readonly<Omit<Folder, 'userId'>>
 {
   @ApiProperty({
     type: String,

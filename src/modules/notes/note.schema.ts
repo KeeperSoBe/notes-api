@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
-import { HydratedDocument } from 'mongoose';
-import { Base } from '../../shared/schemas/base.schema';
 import { ApiProperty } from '@nestjs/swagger';
+import { HydratedDocument } from 'mongoose';
+
+import { Base } from '../../shared/schemas/base.schema';
 
 export type NoteDocument = HydratedDocument<Note>;
 
@@ -22,13 +22,6 @@ export class Note extends Base {
   public userId: string;
 
   @Prop({
-    type: String || null,
-    default: null,
-    required: false,
-  })
-  public title: string | null;
-
-  @Prop({
     type: String,
     required: true,
   })
@@ -39,11 +32,20 @@ export class Note extends Base {
     default: new Date(),
   })
   public updatedAt: Date;
+
+  @Prop({
+    type: Date || null,
+    default: null,
+  })
+  public deletedAt: Date | null;
 }
 
 export const NoteSchema = SchemaFactory.createForClass(Note);
 
-export class NoteDto extends Base implements Readonly<Omit<Note, 'userId'>> {
+export class NoteDto
+  extends Base
+  implements Readonly<Omit<Note, 'userId' | 'deletedAt'>>
+{
   @ApiProperty({
     type: String,
     required: false,
@@ -51,14 +53,6 @@ export class NoteDto extends Base implements Readonly<Omit<Note, 'userId'>> {
     description: 'The folder id of the note.',
   })
   public folderId: string;
-
-  @ApiProperty({
-    type: String,
-    required: false,
-    example: 'My note title',
-    description: 'The title of the note.',
-  })
-  public title: string | null;
 
   @ApiProperty({
     type: String,

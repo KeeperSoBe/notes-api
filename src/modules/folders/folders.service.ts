@@ -1,9 +1,14 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Folder, FolderDto } from './folder.schema';
+
 import { CreateFolderDto } from './dtos/create-folder.dto';
 import { UpdateFolderDto } from './dtos/update-folder.dto';
+import { Folder, FolderDto } from './folder.schema';
 
 @Injectable()
 export class FoldersService {
@@ -44,7 +49,26 @@ export class FoldersService {
     createFolderDto: CreateFolderDto,
   ): Promise<FolderDto> {
     try {
+      if (createFolderDto.order === 0) {
+        throw new BadRequestException();
+      }
+
       const folders = await this.folders.create({ ...createFolderDto, userId });
+
+      return this.toFolderDto(folders.toJSON());
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
+      throw new BadRequestException();
+    }
+  }
+
+  public async createDefaultFolder(userId: string): Promise<FolderDto> {
+    try {
+      const folders = await this.folders.create({
+        userId,
+        title: 'Notes',
+        order: 0,
+      });
 
       return this.toFolderDto(folders.toJSON());
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -64,7 +88,15 @@ export class FoldersService {
         throw new BadRequestException();
       }
 
-      await this.folders.updateOne({ userId, id }, updateFolderDto);
+      const { upsertedCount } = await this.folders.updateOne(
+        { userId, id, order: { $ne: 0 } },
+        updateFolderDto,
+      );
+
+      if (!upsertedCount) {
+        throw new NotFoundException();
+      }
+
       return updateFolderDto;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
@@ -74,8 +106,16 @@ export class FoldersService {
 
   public async delete(userId: string, id: string): Promise<void> {
     try {
-      // TODO: This will change to soft deletion soon.
-      await this.folders.deleteOne({ userId, id });
+      const { deletedCount } = await this.folders.deleteOne({
+        userId,
+        id,
+        order: { $ne: 0 },
+      });
+
+      if (!deletedCount) {
+        throw new NotFoundException();
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       throw new BadRequestException();

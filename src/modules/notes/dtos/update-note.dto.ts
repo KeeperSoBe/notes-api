@@ -1,12 +1,13 @@
-import { IsOptional, IsString, Length } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateNoteDto {
   @IsOptional()
   @IsString()
-  @Length(0, 255)
-  public readonly title?: string | null;
-
-  @IsOptional()
-  @IsString()
+  @ApiProperty({
+    type: String,
+    description: 'The contents of the note',
+    example: 'My note',
+  })
   public readonly contents?: string;
 }
