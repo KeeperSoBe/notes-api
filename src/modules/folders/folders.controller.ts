@@ -63,6 +63,26 @@ export class FoldersController {
     return await this.service.list(user.id);
   }
 
+  @Get(':id')
+  @ApiParam({
+    type: String,
+    name: 'id',
+  })
+  @ApiOperation({
+    operationId: 'get',
+    summary: 'Gets a users folder',
+    description: 'Gets a users folder.',
+  })
+  @ApiBody({ type: FolderDto })
+  @ApiNotFoundResponse({ type: INotFoundException })
+  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  public async get(
+    @Param() { id }: FindOneByIdParam,
+    @Request() { user }: AuthenticatedRequest,
+  ): Promise<FolderDto> {
+    return await this.service.get(user.id, id);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({

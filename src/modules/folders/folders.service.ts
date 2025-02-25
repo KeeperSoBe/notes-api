@@ -26,22 +26,48 @@ export class FoldersService {
     private readonly folders: Model<Folder>,
   ) {}
 
-  public async list(userId: string): Promise<FolderDto[]> {
-    const folders = await this.folders
-      .find(
-        { userId, deletedAt: null },
-        {},
-        { select: { ...this.selectionProperties, _id: 0 } },
-      )
-      .lean();
+  public async get(userId: string, id: string): Promise<FolderDto> {
+    try {
+      const folder = await this.folders
+        .findOne(
+          { userId, id, deletedAt: null },
+          {},
+          { select: { ...this.selectionProperties, _id: 0 } },
+        )
+        .lean();
 
-    const parsedFolders: FolderDto[] = [];
+      if (!folder) {
+        throw new NotFoundException();
+      }
 
-    for (let index = 0; index < folders.length; index++) {
-      parsedFolders.push(this.toFolderDto(folders[index]));
+      return this.toFolderDto(folder);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new NotFoundException();
     }
+  }
 
-    return parsedFolders;
+  public async list(userId: string): Promise<FolderDto[]> {
+    try {
+      const folders = await this.folders
+        .find(
+          { userId, deletedAt: null },
+          {},
+          { select: { ...this.selectionProperties, _id: 0 } },
+        )
+        .lean();
+
+      const parsedFolders: FolderDto[] = [];
+
+      for (let index = 0; index < folders.length; index++) {
+        parsedFolders.push(this.toFolderDto(folders[index]));
+      }
+
+      return parsedFolders;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new BadRequestException();
+    }
   }
 
   public async create(
