@@ -7,13 +7,14 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import HashService from '../../shared/hash.service';
+import BaseService from '../../shared/services/base.service';
+import HashService from '../../shared/services/hash.service';
 import { UserAuthenticationDto } from '../auth/dtos/authentication.dto';
-import { User, UserDto } from './user.schema';
 import { FoldersService } from '../folders/folders.service';
+import { User, UserDto } from './user.schema';
 
 @Injectable()
-export class UsersService {
+export class UsersService extends BaseService {
   private readonly selectionProperties: {
     [Property in keyof Partial<User>]: 0 | 1;
   } = {
@@ -27,22 +28,32 @@ export class UsersService {
     private readonly users: Model<User>,
     private readonly foldersService: FoldersService,
     private readonly hashService: HashService,
-  ) {}
+  ) {
+    super();
+  }
 
   public async get(id: string): Promise<UserDto> {
-    const user = await this.users
-      .findOne({ id }, {}, { select: { ...this.selectionProperties, _id: 0 } })
-      .lean();
+    try {
+      const user = await this.users
+        .findOne(
+          { id },
+          {},
+          { select: { ...this.selectionProperties, _id: 0 } },
+        )
+        .lean();
 
-    if (!user) {
-      throw new NotFoundException();
+      if (!user) {
+        throw new NotFoundException();
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt,
+      };
+    } catch (error) {
+      this.throwError(error);
     }
-
-    return {
-      id: user.id,
-      email: user.email,
-      createdAt: user.createdAt,
-    };
   }
 
   public async create({
@@ -50,19 +61,33 @@ export class UsersService {
     ...createUserDto
   }: UserAuthenticationDto): Promise<UserDto> {
     try {
-      const user = await this.users.create({
-        ...createUserDto,
-        password: await this.hashService.hash(password),
-      });
+      let createdUser: {
+        id: string;
+        createdAt: Date;
+      };
 
-      const { id, createdAt } = user.toJSON();
+      try {
+        const user = await this.users.create({
+          ...createUserDto,
+          password: await this.hashService.hash(password),
+        });
 
-      await this.foldersService.createDefaultFolder(id);
+        const { id, createdAt } = user.toJSON();
 
-      return { ...createUserDto, id, createdAt };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+        createdUser = {
+          id,
+          createdAt,
+        };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
+        throw new BadRequestException();
+      }
+
+      await this.foldersService.createDefaultFolder(createdUser.id);
+
+      return { ...createUserDto, ...createdUser };
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
@@ -72,18 +97,16 @@ export class UsersService {
   ): Promise<void> {
     try {
       await this.users.updateOne({ id }, updateUser);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
   public async delete(id: string): Promise<void> {
     try {
       await this.users.deleteOne({ id });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 

@@ -6,12 +6,13 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+import BaseService from '../../shared/services/base.service';
 import { CreateFolderDto } from './dtos/create-folder.dto';
 import { UpdateFolderDto } from './dtos/update-folder.dto';
 import { Folder, FolderDto } from './folder.schema';
 
 @Injectable()
-export class FoldersService {
+export class FoldersService extends BaseService {
   private readonly selectionProperties: {
     [Property in keyof Partial<Folder>]: 0 | 1;
   } = {
@@ -24,7 +25,9 @@ export class FoldersService {
   public constructor(
     @InjectModel(Folder.name)
     private readonly folders: Model<Folder>,
-  ) {}
+  ) {
+    super();
+  }
 
   public async get(userId: string, id: string): Promise<FolderDto> {
     try {
@@ -41,9 +44,8 @@ export class FoldersService {
       }
 
       return this.toFolderDto(folder);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new NotFoundException();
+      this.throwError(error);
     }
   }
 
@@ -64,9 +66,8 @@ export class FoldersService {
       }
 
       return parsedFolders;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new BadRequestException();
+      this.throwError(error);
     }
   }
 
@@ -82,9 +83,8 @@ export class FoldersService {
       const folders = await this.folders.create({ ...createFolderDto, userId });
 
       return this.toFolderDto(folders.toJSON());
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
@@ -97,9 +97,8 @@ export class FoldersService {
       });
 
       return this.toFolderDto(folders.toJSON());
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
@@ -124,9 +123,8 @@ export class FoldersService {
       }
 
       return updateFolderDto;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
@@ -141,10 +139,8 @@ export class FoldersService {
       if (!deletedCount) {
         throw new NotFoundException();
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 

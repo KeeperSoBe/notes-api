@@ -8,15 +8,15 @@ import {
   mockPassword,
 } from '../../../test/mocks/auth.mock';
 import { mockUserFactory } from '../../../test/mocks/user.mock';
-import HashService from '../../shared/hash.service';
+import { AuthenticatedRequest } from '../../shared/interfaces/request.interface';
+import HashService from '../../shared/services/hash.service';
+import { Folder } from '../folders/folder.schema';
+import { FoldersService } from '../folders/folders.service';
 import { User } from '../users/user.schema';
 import { UsersService } from '../users/users.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UserAuthenticationDto } from './dtos/authentication.dto';
-import { AuthenticatedRequest } from '../../shared/interfaces/request.interface';
-import { FoldersService } from '../folders/folders.service';
-import { Folder } from '../folders/folder.schema';
 
 describe('AuthController', () => {
   let controller: AuthController;

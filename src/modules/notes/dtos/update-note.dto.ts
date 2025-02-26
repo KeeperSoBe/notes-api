@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateNoteDto {
   @IsOptional()
@@ -20,4 +20,15 @@ export class UpdateNoteDto {
     description: 'The folder id of the note.',
   })
   public folderId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({
+    type: 'null',
+    required: false,
+    example: null,
+    description:
+      'Restores a soft deleted note if provided, must be used with folderId.',
+  })
+  public deletedAt?: null;
 }

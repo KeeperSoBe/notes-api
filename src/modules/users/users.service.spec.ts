@@ -5,12 +5,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { mockPassword } from '../../../test/mocks/auth.mock';
 import { mockUserFactory } from '../../../test/mocks/user.mock';
-import HashService from '../../shared/hash.service';
+import HashService from '../../shared/services/hash.service';
 import { UserAuthenticationDto } from '../auth/dtos/authentication.dto';
-import { User } from './user.schema';
-import { UsersService } from './users.service';
 import { Folder } from '../folders/folder.schema';
 import { FoldersService } from '../folders/folders.service';
+import { User } from './user.schema';
+import { UsersService } from './users.service';
 
 describe('UsersService', () => {
   let service: UsersService;

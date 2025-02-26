@@ -7,12 +7,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
+import BaseService from '../../shared/services/base.service';
 import { CreateNoteDto } from './dtos/create-note.dto';
 import { UpdateNoteDto } from './dtos/update-note.dto';
 import { Note, NoteDto } from './note.schema';
 
 @Injectable()
-export class NotesService {
+export class NotesService extends BaseService {
   private readonly selectionProperties: {
     [Property in keyof Partial<Note>]: 0 | 1;
   } = {
@@ -26,71 +27,85 @@ export class NotesService {
   public constructor(
     @InjectModel(Note.name)
     private readonly notes: Model<Note>,
-  ) {}
+  ) {
+    super();
+  }
 
   public async get(
     userId: string,
     folderId: string,
     id: string,
   ): Promise<NoteDto> {
-    const note = await this.notes
-      .findOne(
-        { userId, folderId, id },
-        {},
-        { select: { ...this.selectionProperties, _id: 0 } },
-      )
-      .lean();
+    try {
+      const note = await this.notes
+        .findOne(
+          { userId, folderId, id },
+          {},
+          { select: { ...this.selectionProperties, _id: 0 } },
+        )
+        .lean();
 
-    if (!note) {
-      throw new NotFoundException();
+      if (!note) {
+        throw new NotFoundException();
+      }
+
+      return this.toNoteDto(note);
+    } catch (error) {
+      this.throwError(error);
     }
-
-    return this.toNoteDto(note);
   }
 
   public async list(userId: string, folderId: string): Promise<NoteDto[]> {
-    const notes = await this.notes
-      .find(
-        { userId, folderId, deletedAt: null },
-        {},
-        { select: { ...this.selectionProperties, _id: 0 } },
-      )
-      .lean();
+    try {
+      const notes = await this.notes
+        .find(
+          { userId, folderId, deletedAt: null },
+          {},
+          { select: { ...this.selectionProperties, _id: 0 } },
+        )
+        .lean();
 
-    const parsedNotes: NoteDto[] = [];
+      const parsedNotes: NoteDto[] = [];
 
-    for (let index = 0; index < notes.length; index++) {
-      parsedNotes.push(this.toNoteDto(notes[index]));
+      for (let index = 0; index < notes.length; index++) {
+        parsedNotes.push(this.toNoteDto(notes[index]));
+      }
+
+      return parsedNotes;
+    } catch (error) {
+      this.throwError(error);
     }
-
-    return parsedNotes;
   }
 
   public async listSoftDeleted(
     userId: string,
   ): Promise<(NoteDto & DeletedAtDto)[]> {
-    const notes = await this.notes
-      .find(
-        { userId, deletedAt: { $ne: null } },
-        {},
-        { select: { ...this.selectionProperties, deletedAt: 1, _id: 0 } },
-      )
-      .lean();
+    try {
+      const notes = await this.notes
+        .find(
+          { userId, deletedAt: { $ne: null } },
+          {},
+          { select: { ...this.selectionProperties, deletedAt: 1, _id: 0 } },
+        )
+        .lean();
 
-    const parsedFolders: (NoteDto & DeletedAtDto)[] = [];
+      const parsedFolders: (NoteDto & DeletedAtDto)[] = [];
 
-    for (let index = 0; index < notes.length; index++) {
-      const deletedAt = notes[index].deletedAt;
+      for (let index = 0; index < notes.length; index++) {
+        const deletedAt = notes[index].deletedAt;
 
-      if (deletedAt) {
-        parsedFolders.push({
-          ...this.toNoteDto(notes[index]),
-          deletedAt,
-        });
+        if (deletedAt) {
+          parsedFolders.push({
+            ...this.toNoteDto(notes[index]),
+            deletedAt,
+          });
+        }
       }
-    }
 
-    return parsedFolders;
+      return parsedFolders;
+    } catch (error) {
+      this.throwError(error);
+    }
   }
 
   public async create(
@@ -106,9 +121,8 @@ export class NotesService {
       });
 
       return this.toNoteDto(notes.toJSON());
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
@@ -119,11 +133,22 @@ export class NotesService {
     updateNoteDto: UpdateNoteDto,
   ): Promise<UpdateNoteDto> {
     try {
-      await this.notes.updateOne({ userId, folderId, id }, updateNoteDto);
+      if (updateNoteDto.deletedAt === null && !updateNoteDto.folderId) {
+        throw new BadRequestException();
+      }
+
+      const { modifiedCount } = await this.notes.updateOne(
+        { userId, folderId, id },
+        updateNoteDto,
+      );
+
+      if (!modifiedCount) {
+        throw new NotFoundException();
+      }
+
       return updateNoteDto;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
@@ -135,15 +160,18 @@ export class NotesService {
     try {
       const deletedAt = new Date();
 
-      await this.notes.updateOne(
+      const { modifiedCount } = await this.notes.updateOne(
         { userId, folderId, id, deletedAt: null },
         { deletedAt },
       );
 
+      if (!modifiedCount) {
+        throw new NotFoundException();
+      }
+
       return { deletedAt };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
@@ -153,10 +181,17 @@ export class NotesService {
     id: string,
   ): Promise<void> {
     try {
-      await this.notes.deleteOne({ userId, folderId, id });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
-      throw new BadRequestException();
+      const { deletedCount } = await this.notes.deleteOne({
+        userId,
+        folderId,
+        id,
+      });
+
+      if (!deletedCount) {
+        throw new NotFoundException();
+      }
+    } catch (error) {
+      this.throwError(error);
     }
   }
 
