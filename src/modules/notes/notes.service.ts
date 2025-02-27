@@ -152,29 +152,6 @@ export class NotesService extends BaseService {
     }
   }
 
-  public async softDelete(
-    userId: string,
-    folderId: string,
-    id: string,
-  ): Promise<DeletedAtDto> {
-    try {
-      const deletedAt = new Date();
-
-      const { modifiedCount } = await this.notes.updateOne(
-        { userId, folderId, id, deletedAt: null },
-        { deletedAt },
-      );
-
-      if (!modifiedCount) {
-        throw new NotFoundException();
-      }
-
-      return { deletedAt };
-    } catch (error) {
-      this.throwError(error);
-    }
-  }
-
   public async delete(
     userId: string,
     folderId: string,

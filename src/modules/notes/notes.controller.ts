@@ -176,35 +176,6 @@ export class NotesController {
     return await this.service.update(user.id, folderId, id, updateNoteDto);
   }
 
-  @Delete(`${routePrefix}:id/soft`)
-  @ApiParam({
-    type: String,
-    name: 'folderId',
-    required: true,
-    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
-    description: 'The id of the folder.',
-  })
-  @ApiParam({
-    type: String,
-    name: 'id',
-    required: true,
-    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
-    description: 'The id of the note.',
-  })
-  @ApiOperation({
-    operationId: 'softDelete',
-    summary: 'Soft delete a note',
-    description: 'Soft deletes a note by its id.',
-  })
-  @ApiOkResponse({ type: DeletedAtDto })
-  @ApiNotFoundResponse({ type: DeletedAtDto })
-  public async softDelete(
-    @Request() { user }: AuthenticatedRequest,
-    @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
-  ): Promise<DeletedAtDto> {
-    return await this.service.softDelete(user.id, folderId, id);
-  }
-
   @Delete(`${routePrefix}:id`)
   @ApiParam({
     type: String,

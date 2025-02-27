@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsOptional,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class UpdateNoteDto {
   @IsOptional()
@@ -22,13 +27,14 @@ export class UpdateNoteDto {
   public folderId?: string;
 
   @IsOptional()
-  @IsBoolean()
+  @IsDateString()
+  @ValidateIf((_object, value) => value !== null)
   @ApiProperty({
-    type: 'null',
+    type: Date || 'null',
     required: false,
     example: null,
     description:
-      'Restores a soft deleted note if provided, must be used with folderId.',
+      'Soft deletes a note if provided a date, if null is provided with a folderId the note will be restored.',
   })
-  public deletedAt?: null;
+  public deletedAt?: Date | null;
 }
