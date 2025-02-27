@@ -61,3 +61,11 @@ export abstract class INotFoundException extends IException {
   @ApiProperty(ApiStatusProperty(404))
   public readonly statusCode: number;
 }
+
+export abstract class IInternalServerErrorException extends IException {
+  @ApiProperty(ApiMessageProperty(500))
+  public readonly message: string;
+
+  @ApiProperty(ApiStatusProperty(500))
+  public readonly statusCode: number;
+}

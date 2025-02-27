@@ -13,6 +13,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -23,6 +24,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthenticatedRequest } from '../../shared/interfaces/request.interface';
 import {
   IBadRequestException,
+  IInternalServerErrorException,
   IUnauthorizedException,
 } from '../../shared/interfaces/swagger.interface';
 import { UserDto } from '../users/user.schema';
@@ -34,6 +36,7 @@ import { AuthGuard } from './guards/auth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
+@ApiInternalServerErrorResponse({ type: IInternalServerErrorException })
 @Throttle({
   default: {
     ttl: 60,
@@ -54,7 +57,6 @@ export class AuthController {
   @ApiBody({ type: UserAuthenticationDto })
   @ApiCreatedResponse({ type: AuthenticationResponse })
   @ApiBadRequestResponse({ type: IBadRequestException })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async register(
     @Body() { email, password }: UserAuthenticationDto,
   ): Promise<AuthenticationResponse> {
@@ -74,7 +76,6 @@ export class AuthController {
   })
   @ApiBody({ type: UserAuthenticationDto })
   @ApiOkResponse({ type: AuthenticationResponse })
-  @ApiBadRequestResponse({ type: IBadRequestException })
   @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async login(
     @Body() { email, password }: UserAuthenticationDto,

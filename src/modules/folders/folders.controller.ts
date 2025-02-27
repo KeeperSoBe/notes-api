@@ -11,13 +11,15 @@ import {
   Request,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -29,6 +31,8 @@ import {
   FindOneByIdParam,
 } from '../../shared/interfaces/request.interface';
 import {
+  IBadRequestException,
+  IInternalServerErrorException,
   INotFoundException,
   IUnauthorizedException,
 } from '../../shared/interfaces/swagger.interface';
@@ -40,6 +44,8 @@ import { FoldersService } from './folders.service';
 @ApiTags('Folders')
 @Controller('folders')
 @ApiBearerAuth()
+@ApiUnauthorizedResponse({ type: IUnauthorizedException })
+@ApiInternalServerErrorResponse({ type: IInternalServerErrorException })
 @Throttle({
   default: {
     ttl: 60,
@@ -56,7 +62,7 @@ export class FoldersController {
     description: 'Lists a users folders.',
   })
   @ApiBody({ type: [FolderDto] })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  @ApiOkResponse({ type: [FolderDto] })
   public async list(
     @Request() { user }: AuthenticatedRequest,
   ): Promise<FolderDto[]> {
@@ -67,6 +73,9 @@ export class FoldersController {
   @ApiParam({
     type: String,
     name: 'id',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
   })
   @ApiOperation({
     operationId: 'get',
@@ -74,8 +83,8 @@ export class FoldersController {
     description: 'Gets a users folder.',
   })
   @ApiBody({ type: FolderDto })
+  @ApiOkResponse({ type: FolderDto })
   @ApiNotFoundResponse({ type: INotFoundException })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async get(
     @Param() { id }: FindOneByIdParam,
     @Request() { user }: AuthenticatedRequest,
@@ -92,7 +101,7 @@ export class FoldersController {
   })
   @ApiBody({ type: CreateFolderDto })
   @ApiCreatedResponse({ type: FolderDto })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  @ApiBadRequestResponse({ type: IBadRequestException })
   public async create(
     @Request() { user }: AuthenticatedRequest,
     @Body() createFolderDto: CreateFolderDto,
@@ -101,15 +110,22 @@ export class FoldersController {
   }
 
   @Patch(':id')
+  @ApiParam({
+    type: String,
+    name: 'id',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
+  })
   @ApiOperation({
     operationId: 'update',
     summary: 'Updates a folder',
     description: 'Patch updates a folder by its id.',
   })
   @ApiBody({ type: UpdateFolderDto })
-  @ApiResponse({ type: UpdateFolderDto })
+  @ApiOkResponse({ type: UpdateFolderDto })
+  @ApiBadRequestResponse({ type: IBadRequestException })
   @ApiNotFoundResponse({ type: INotFoundException })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async update(
     @Request() { user }: AuthenticatedRequest,
     @Param() { id }: FindOneByIdParam,
@@ -123,15 +139,16 @@ export class FoldersController {
     type: String,
     name: 'id',
     required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
   })
   @ApiOperation({
     operationId: 'delete',
     summary: 'Delete a folder',
     description: 'Deletes a folder by its id.',
   })
-  @ApiResponse({ type: DeletedAtDto })
+  @ApiOkResponse({ type: DeletedAtDto })
   @ApiNotFoundResponse({ type: INotFoundException })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async delete(
     @Request() { user }: AuthenticatedRequest,
     @Param() { id }: FindOneByIdParam,

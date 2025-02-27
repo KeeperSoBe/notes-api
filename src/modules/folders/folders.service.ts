@@ -113,12 +113,12 @@ export class FoldersService extends BaseService {
         throw new BadRequestException();
       }
 
-      const { upsertedCount } = await this.folders.updateOne(
+      const { matchedCount } = await this.folders.updateOne(
         { userId, id, order: { $ne: 0 } },
         updateFolderDto,
       );
 
-      if (!upsertedCount) {
+      if (!matchedCount) {
         throw new NotFoundException();
       }
 

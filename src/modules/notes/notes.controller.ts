@@ -11,12 +11,15 @@ import {
   Request,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -27,7 +30,12 @@ import {
   AuthenticatedRequest,
   FindOneByIdParam,
 } from '../../shared/interfaces/request.interface';
-import { IUnauthorizedException } from '../../shared/interfaces/swagger.interface';
+import {
+  IBadRequestException,
+  IInternalServerErrorException,
+  INotFoundException,
+  IUnauthorizedException,
+} from '../../shared/interfaces/swagger.interface';
 import { CreateNoteDto } from './dtos/create-note.dto';
 import { UpdateNoteDto } from './dtos/update-note.dto';
 import { NoteDto } from './note.schema';
@@ -38,6 +46,8 @@ const routePrefix = 'folders/:folderId/notes/';
 @ApiTags('Notes')
 @Controller()
 @ApiBearerAuth()
+@ApiUnauthorizedResponse({ type: IUnauthorizedException })
+@ApiInternalServerErrorResponse({ type: IInternalServerErrorException })
 @Throttle({
   default: {
     ttl: 60,
@@ -53,8 +63,7 @@ export class NotesController {
     summary: 'Lists a users deleted notes',
     description: 'Lists a users deleted notes.',
   })
-  @ApiResponse({ type: Array<NoteDto & DeletedAtDto> })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  @ApiOkResponse({ type: [NoteDto] })
   public async listSoftDeleted(
     @Request() { user }: AuthenticatedRequest,
   ): Promise<(NoteDto & DeletedAtDto)[]> {
@@ -62,13 +71,19 @@ export class NotesController {
   }
 
   @Get(routePrefix)
+  @ApiParam({
+    type: String,
+    name: 'folderId',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
+  })
   @ApiOperation({
     operationId: 'list',
     summary: 'Lists a users notes',
     description: 'Lists a users notes.',
   })
-  @ApiBody({ type: [NoteDto] })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  @ApiOkResponse({ type: [NoteDto] })
   public async list(
     @Request() { user }: AuthenticatedRequest,
     @Param() { folderId }: { folderId: string },
@@ -79,16 +94,25 @@ export class NotesController {
   @Get(`${routePrefix}:id`)
   @ApiParam({
     type: String,
+    name: 'folderId',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
+  })
+  @ApiParam({
+    type: String,
     name: 'id',
     required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the note.',
   })
   @ApiOperation({
     operationId: 'get',
     summary: 'Get a users note',
     description: 'Gets a users note by its id.',
   })
-  @ApiBody({ type: NoteDto })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  @ApiOkResponse({ type: NoteDto })
+  @ApiNotFoundResponse({ type: INotFoundException })
   public async get(
     @Request() { user }: AuthenticatedRequest,
     @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
@@ -97,6 +121,13 @@ export class NotesController {
   }
 
   @Post(routePrefix)
+  @ApiParam({
+    type: String,
+    name: 'folderId',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
+  })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     operationId: 'create',
@@ -105,7 +136,6 @@ export class NotesController {
   })
   @ApiBody({ type: CreateNoteDto })
   @ApiCreatedResponse({ type: NoteDto })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
   public async create(
     @Request() { user }: AuthenticatedRequest,
     @Param() { folderId }: { folderId: string },
@@ -115,14 +145,29 @@ export class NotesController {
   }
 
   @Patch(`${routePrefix}:id`)
+  @ApiParam({
+    type: String,
+    name: 'folderId',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
+  })
+  @ApiParam({
+    type: String,
+    name: 'id',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the note.',
+  })
   @ApiOperation({
     operationId: 'update',
     summary: 'Updates a note',
     description: 'Patch updates a note by its id.',
   })
-  @ApiBody({ type: NoteDto })
-  @ApiCreatedResponse({ type: UpdateNoteDto })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  @ApiBody({ type: UpdateNoteDto })
+  @ApiOkResponse({ type: UpdateNoteDto })
+  @ApiBadRequestResponse({ type: IBadRequestException })
+  @ApiNotFoundResponse({ type: INotFoundException })
   public async update(
     @Request() { user }: AuthenticatedRequest,
     @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
@@ -134,16 +179,25 @@ export class NotesController {
   @Delete(`${routePrefix}:id/soft`)
   @ApiParam({
     type: String,
+    name: 'folderId',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
+  })
+  @ApiParam({
+    type: String,
     name: 'id',
     required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the note.',
   })
   @ApiOperation({
     operationId: 'softDelete',
     summary: 'Soft delete a note',
     description: 'Soft deletes a note by its id.',
   })
-  @ApiResponse({ type: DeletedAtDto })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  @ApiOkResponse({ type: DeletedAtDto })
+  @ApiNotFoundResponse({ type: DeletedAtDto })
   public async softDelete(
     @Request() { user }: AuthenticatedRequest,
     @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
@@ -154,16 +208,25 @@ export class NotesController {
   @Delete(`${routePrefix}:id`)
   @ApiParam({
     type: String,
+    name: 'folderId',
+    required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the folder.',
+  })
+  @ApiParam({
+    type: String,
     name: 'id',
     required: true,
+    example: '977e537c-fcc2-403f-9838-d9420a1a6801',
+    description: 'The id of the note.',
   })
   @ApiOperation({
     operationId: 'delete',
     summary: 'Delete a note',
     description: 'Deletes a note by its id.',
   })
-  @ApiResponse({ type: DeletedAtDto })
-  @ApiUnauthorizedResponse({ type: IUnauthorizedException })
+  @ApiOkResponse({ type: DeletedAtDto })
+  @ApiNotFoundResponse({ type: DeletedAtDto })
   public async delete(
     @Request() { user }: AuthenticatedRequest,
     @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
