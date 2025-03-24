@@ -18,6 +18,11 @@ async function bootstrap(): Promise<void> {
 
   await app.register(helmet);
 
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  });
+
   app.setGlobalPrefix('api');
 
   app.enableVersioning({
