@@ -19,14 +19,7 @@
   <p align="center">
     The backend service for my Notes project.
     <br />
-    <a href="https://github.com/keepersobe/notes-client"><strong>Explore the docs »</strong></a>
     <br />
-    <br />
-    <a href="https://github.com/keepersobe/notes-client">View Demo</a>
-    ·
-    <a href="https://github.com/keepersobe/notes-client/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
-    ·
-    <a href="https://github.com/keepersobe/notes-client/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
