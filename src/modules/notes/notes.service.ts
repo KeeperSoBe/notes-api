@@ -6,10 +6,10 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { DeletedAtDto } from '../../shared/dtos/deleted-at.dto';
 import BaseService from '../../shared/services/base.service';
 import { CreateNoteDto } from './dtos/create-note.dto';
-import { UpdateNoteDto } from './dtos/update-note.dto';
+import { SoftDeletedNoteDto } from './dtos/soft-deleted-note.dto';
+import { UpdateNoteDto, UpdateNoteResponseDto } from './dtos/update-note.dto';
 import { Note, NoteDto } from './note.schema';
 
 @Injectable()
@@ -77,9 +77,7 @@ export class NotesService extends BaseService {
     }
   }
 
-  public async listSoftDeleted(
-    userId: string,
-  ): Promise<(NoteDto & DeletedAtDto)[]> {
+  public async listSoftDeleted(userId: string): Promise<SoftDeletedNoteDto[]> {
     try {
       const notes = await this.notes
         .find(
@@ -89,7 +87,7 @@ export class NotesService extends BaseService {
         )
         .lean();
 
-      const parsedFolders: (NoteDto & DeletedAtDto)[] = [];
+      const parsedFolders: SoftDeletedNoteDto[] = [];
 
       for (let index = 0; index < notes.length; index++) {
         const deletedAt = notes[index].deletedAt;
@@ -131,22 +129,24 @@ export class NotesService extends BaseService {
     folderId: string,
     id: string,
     updateNoteDto: UpdateNoteDto,
-  ): Promise<UpdateNoteDto> {
+  ): Promise<UpdateNoteResponseDto> {
     try {
       if (updateNoteDto.deletedAt === null && !updateNoteDto.folderId) {
         throw new BadRequestException();
       }
 
+      const updatedAt = new Date();
+
       const { modifiedCount } = await this.notes.updateOne(
         { userId, folderId, id },
-        updateNoteDto,
+        { ...updateNoteDto, updatedAt: new Date() },
       );
 
       if (!modifiedCount) {
         throw new NotFoundException();
       }
 
-      return updateNoteDto;
+      return { ...updateNoteDto, updatedAt };
     } catch (error) {
       this.throwError(error);
     }

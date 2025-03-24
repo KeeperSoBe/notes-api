@@ -65,7 +65,8 @@ export class NoteDto
   @ApiProperty({
     type: Date,
     example: 'Sat Jan 27 2024 12:00:00 GMT+0000 (Greenwich Mean Time)',
-    description: 'The date timestamp the entity was created.',
+    required: false,
+    description: 'The date timestamp the entity was last updated.',
   })
   public updatedAt: Date;
 }

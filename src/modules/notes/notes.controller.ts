@@ -37,11 +37,16 @@ import {
   IUnauthorizedException,
 } from '../../shared/interfaces/swagger.interface';
 import { CreateNoteDto } from './dtos/create-note.dto';
-import { UpdateNoteDto } from './dtos/update-note.dto';
+import { SoftDeletedNoteDto } from './dtos/soft-deleted-note.dto';
+import { UpdateNoteDto, UpdateNoteResponseDto } from './dtos/update-note.dto';
 import { NoteDto } from './note.schema';
 import { NotesService } from './notes.service';
 
 const routePrefix = 'folders/:folderId/notes/';
+
+interface FindOneByFolderIdParam {
+  readonly folderId: string;
+}
 
 @ApiTags('Notes')
 @Controller()
@@ -63,10 +68,10 @@ export class NotesController {
     summary: 'Lists a users deleted notes',
     description: 'Lists a users deleted notes.',
   })
-  @ApiOkResponse({ type: [NoteDto] })
+  @ApiOkResponse({ type: [SoftDeletedNoteDto] })
   public async listSoftDeleted(
     @Request() { user }: AuthenticatedRequest,
-  ): Promise<(NoteDto & DeletedAtDto)[]> {
+  ): Promise<SoftDeletedNoteDto[]> {
     return await this.service.listSoftDeleted(user.id);
   }
 
@@ -86,7 +91,7 @@ export class NotesController {
   @ApiOkResponse({ type: [NoteDto] })
   public async list(
     @Request() { user }: AuthenticatedRequest,
-    @Param() { folderId }: { folderId: string },
+    @Param() { folderId }: FindOneByFolderIdParam,
   ): Promise<NoteDto[]> {
     return await this.service.list(user.id, folderId);
   }
@@ -115,7 +120,7 @@ export class NotesController {
   @ApiNotFoundResponse({ type: INotFoundException })
   public async get(
     @Request() { user }: AuthenticatedRequest,
-    @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
+    @Param() { folderId, id }: FindOneByIdParam & FindOneByFolderIdParam,
   ): Promise<NoteDto> {
     return await this.service.get(user.id, folderId, id);
   }
@@ -138,7 +143,7 @@ export class NotesController {
   @ApiCreatedResponse({ type: NoteDto })
   public async create(
     @Request() { user }: AuthenticatedRequest,
-    @Param() { folderId }: { folderId: string },
+    @Param() { folderId }: FindOneByFolderIdParam,
     @Body() createNoteDto: CreateNoteDto,
   ): Promise<NoteDto> {
     return await this.service.create(user.id, folderId, createNoteDto);
@@ -165,14 +170,14 @@ export class NotesController {
     description: 'Patch updates a note by its id.',
   })
   @ApiBody({ type: UpdateNoteDto })
-  @ApiOkResponse({ type: UpdateNoteDto })
+  @ApiOkResponse({ type: UpdateNoteResponseDto })
   @ApiBadRequestResponse({ type: IBadRequestException })
   @ApiNotFoundResponse({ type: INotFoundException })
   public async update(
     @Request() { user }: AuthenticatedRequest,
-    @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
+    @Param() { folderId, id }: FindOneByIdParam & FindOneByFolderIdParam,
     @Body() updateNoteDto: UpdateNoteDto,
-  ): Promise<UpdateNoteDto> {
+  ): Promise<UpdateNoteResponseDto> {
     return await this.service.update(user.id, folderId, id, updateNoteDto);
   }
 
@@ -197,10 +202,10 @@ export class NotesController {
     description: 'Deletes a note by its id.',
   })
   @ApiOkResponse({ type: DeletedAtDto })
-  @ApiNotFoundResponse({ type: DeletedAtDto })
+  @ApiNotFoundResponse({ type: INotFoundException })
   public async delete(
     @Request() { user }: AuthenticatedRequest,
-    @Param() { folderId, id }: FindOneByIdParam & { folderId: string },
+    @Param() { folderId, id }: FindOneByIdParam & FindOneByFolderIdParam,
   ): Promise<DeletedAtDto> {
     await this.service.delete(user.id, folderId, id);
     return { deletedAt: new Date() };
